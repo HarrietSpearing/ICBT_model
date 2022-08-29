@@ -5,7 +5,7 @@
 ## alloc_step : probability of attempting a reallocation step
 ## q : probability of attempting a reallocation of any given pair, given an allocation step is attempted.
 
-model_shell_A = function(initial_model, step_pars, priors, alg_pars, nSteps, n, data){
+model_shell_A = function(initial_model, step_pars, priors, alg_pars, nSteps, n, df){
   
   model = list()
   pairs = (n*(n-1)/2) - (n-1)
@@ -58,7 +58,7 @@ model_shell_A = function(initial_model, step_pars, priors, alg_pars, nSteps, n, 
   initial_model$n = model$n; initial_model$gamma = model$gamma
   initial_model$alpha = model$alpha; initial_model$beta = model$beta; initial_model$lambda = model$lambda;
   initial_model$nu_A = model$nu_A; initial_model$gamma_A = model$gamma_A; initial_model$lambda_A = model$lambda_A
-  model$postd[1] = lpd_pairwise_A(model_s = initial_model, data = data)
+  model$postd[1] = lpd_pairwise_A(model_s = initial_model, df = df)
   
   K = model$postCl_df[1]
   x = c(c(-K:0)[-which(c(-K:0)==0)], c(0:K)[-1])[ 
@@ -79,19 +79,19 @@ model_shell_A = function(initial_model, step_pars, priors, alg_pars, nSteps, n, 
   
 }
 
-Sampler_A = function(initial_model, data, n, nSteps,
+Sampler_A = function(initial_model, df, n, nSteps,
                     step_pars, priors, alg_pars,
                     fix_thetas){
   
   model = model_shell_A(initial_model = initial_model, step_pars = step_pars, priors = priors, alg_pars = alg_pars,
-                      nSteps = nSteps, n = n, data = data
+                      nSteps = nSteps, n = n, df = df
   )
   
   statusfreq = 100
   
   for(s in 1:(nSteps-1)){
 
-    model = step_A(model = model, data = data, s = s)
+    model = step_A(model = model, df = df, s = s)
     
     if( (s %% statusfreq) == 0){ print(paste0(floor(100*s/nSteps), " % complete")) }
   }
@@ -100,7 +100,7 @@ Sampler_A = function(initial_model, data, n, nSteps,
 }
 
 
-RJMCMC_routine_A = function(initial_model, data, n, step_pars, priors, alg_pars){
+RJMCMC_routine_A = function(initial_model, df, n, step_pars, priors, alg_pars){
   
   
   print("stage 1")
@@ -108,21 +108,21 @@ RJMCMC_routine_A = function(initial_model, data, n, step_pars, priors, alg_pars)
 
   s_m_step = alg_pars$s_m_step; alg_pars$s_m_step = 0
   alg_pars$fix_clusters = T; alg_pars$fix_clusters_A = T
-  model1 = Sampler_A(initial_model = initial_model,n =n, data = data, nSteps = alg_pars$nsteps1,
+  model1 = Sampler_A(initial_model = initial_model,n =n, df = df, nSteps = alg_pars$nsteps1,
                    step_pars = step_pars, priors = priors, alg_pars = alg_pars
   )
   
   model2.i = initialise_model_A(model1)
   print("stage 2")
   alg_pars$fix_clusters = F; alg_pars$fix_clusters_A = F
-  model2 = Sampler_A(initial_model = model2.i,n =n, data = data, nSteps = alg_pars$nsteps2,
+  model2 = Sampler_A(initial_model = model2.i,n =n, df = df, nSteps = alg_pars$nsteps2,
                    step_pars = step_pars, priors = priors, alg_pars = alg_pars
   )
   model3.i = initialise_model_A(model2)
   
   print("stage 3")
   alg_pars$s_m_step = s_m_step
-  model3 = Sampler_A(initial_model = model3.i,n =n, data = data, nSteps = alg_pars$nSteps,
+  model3 = Sampler_A(initial_model = model3.i,n =n, df = df, nSteps = alg_pars$nSteps,
                    step_pars = step_pars, priors = priors, alg_pars = alg_pars
   )
   
@@ -167,26 +167,18 @@ initialise_model_A = function(model){
 }
 
 
-## RJMCMC sampler for simulated data.
-main_A = function(start_at_truth, data_in,
-                  seed, k_rr, cl_df, cl_df_A, n, 
-                  nsteps1, nsteps2, nSteps,
-                  rho, s_m_step, alloc_step, q, i_v_st,              ## algorithm parameters
-                  rho_A, alloc_step_A, q_A,                   ## algorithm parameters
+
+main_A = function(df, n,
+                  nsteps1, nsteps2, nSteps, ## algorithm parameters
+                  rho, s_m_step, alloc_step, q=1, i_v_st,        ## algorithm parameters
+                  rho_A, alloc_step_A, q_A=1,                   ## algorithm parameters
                   sigma_s_m, sigma_s_m_A, tau_A, tau,       ## step-size parameters
                   alpha, beta, gamma, lambda, gamma_A, lambda_A, nu_A){ ## prior parameters
   
-
-      x = sim_model_data_A(n = n, seed = seed, cl_df = cl_df, cl_df_A = cl_df_A, k_rr = k_rr, 
-                         gamma = gamma, gamma_A = gamma_A)
-      
-      truth_model = input_model = x$model
-      truth_model$P_mat = x$data$P_mat
-      data = x$data$data
-   
-      print(paste0("    truth llh: ",
-                   llh_pairwise_A(model_s = truth_model, data = data)))
   
+  input_model = initial_estimates_A(n = n, df = df)
+    
+    
   step_pars = list(); step_pars$tau = tau; step_pars$tau_A = tau_A
   step_pars$sigma_s_m = sigma_s_m; step_pars$sigma_s_m_A = sigma_s_m_A
   
@@ -199,18 +191,17 @@ main_A = function(start_at_truth, data_in,
   alg_pars$alloc_step_A = alloc_step_A; alg_pars$q_A = q_A; alg_pars$alloc_step = alloc_step; alg_pars$q = q
   alg_pars$i_v_st = i_v_st
   
-  
-  RJMCMC_samples = RJMCMC_routine_A(initial_model = input_model, data = data,
+  RJMCMC_samples = RJMCMC_routine_A(initial_model = input_model, df = df,
                                     step_pars = step_pars, priors = priors, alg_pars = alg_pars,
                                     n = n)
   
   
   
-  return(list("simulated" = x,"input_model" = input_model, "RJMCMC" = RJMCMC_samples, 
+  return(list("input_model" = input_model, "RJMCMC" = RJMCMC_samples, 
               "params" = list("step" = step_pars,
                               "prior" = priors,
                               "alg_pars"= alg_pars),
-              "data" = data))
+              "data" = df))
   
 }
 

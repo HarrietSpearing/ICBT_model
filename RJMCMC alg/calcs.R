@@ -88,17 +88,17 @@ get_theta_ij = function(model_s, i, j){
 
 
 #------------------------------------------------#
-llh_pairwise_mcmc_pair_A_crossover = function(model_s, data, i, j){
+llh_pairwise_mcmc_pair_A_crossover = function(model_s, df, i, j){
   
   n = model_s$n
   
   log_like = 0
-  index_i_h = which( data[,'player1'] == i & data[,'player2'] == j )
-  index_i_a = which( data[,'player1'] == j & data[,'player2'] == i )
+  index_i_h = which( df[,'player1'] == i & df[,'player2'] == j )
+  index_i_a = which( df[,'player1'] == j & df[,'player2'] == i )
   
   
-  scores = c(data[index_i_h,'score1']/2, data[index_i_a,'score2']/2)
-  scores = scores[order(data[c(index_i_h,index_i_a), 1])]
+  scores = c(df[index_i_h,'score1']/2, df[index_i_a,'score2']/2)
+  scores = scores[order(df[c(index_i_h,index_i_a), 1])]
   
   if(length(scores)==0){
     return(0)
@@ -150,17 +150,17 @@ llh_pairwise_mcmc_pair_A_crossover = function(model_s, data, i, j){
   return(log_like)
 #  return(list("llh" = log_like, "prob_diff" = prob_diff))
 }
-llh_pairwise_mcmc_pair_A = function(model_s, data, i, j){
+llh_pairwise_mcmc_pair_A = function(model_s, df, i, j){
   
   n = model_s$n
   
   log_like = 0
-  index_i_h = which( data[,'player1'] == i & data[,'player2'] == j )
-  index_i_a = which( data[,'player1'] == j & data[,'player2'] == i )
+  index_i_h = which( df[,'player1'] == i & df[,'player2'] == j )
+  index_i_a = which( df[,'player1'] == j & df[,'player2'] == i )
   
   
-  scores = c(data[index_i_h,'score1']/2, data[index_i_a,'score2']/2)
-  scores = scores[order(data[c(index_i_h,index_i_a), 1])]
+  scores = c(df[index_i_h,'score1']/2, df[index_i_a,'score2']/2)
+  scores = scores[order(df[c(index_i_h,index_i_a), 1])]
   
   if(length(scores)==0){
     return(0)
@@ -185,29 +185,29 @@ llh_pairwise_mcmc_pair_A = function(model_s, data, i, j){
   return(log_like)
   return(list("llh" = log_like, "prob_diff" = prob_diff))
 }
-llh_pairwise_mcmc_single = function(model_s, data, i){
+llh_pairwise_mcmc_single = function(model_s, df, i){
   
   llh = 0
   for(j in c(1:model_s$n)[-i]){
-    llh = llh + llh_pairwise_mcmc_pair_A_crossover(model_s = model_s, data = data, i = i, j = j)
+    llh = llh + llh_pairwise_mcmc_pair_A_crossover(model_s = model_s, df = df, i = i, j = j)
   }
   return(llh)
 }
-llh_pairwise_A = function(model_s, data){
+llh_pairwise_A = function(model_s, df){
   
   n = model_s$n
   llh = 0
   for(i in 1:(n-1)){
     for(j in (i+1):(n)){
-      llh = llh + llh_pairwise_mcmc_pair_A(model_s = model_s, data = data, i = i, j = j)
+      llh = llh + llh_pairwise_mcmc_pair_A(model_s = model_s, df = df, i = i, j = j)
     }
   }
   return(llh)
 }
-lpd_pairwise_A = function(model_s, data){
+lpd_pairwise_A = function(model_s, df){
   ## function computes the full posterior density
   
-  z = llh_pairwise_A(model_s = model_s, data = data) +
+  z = llh_pairwise_A(model_s = model_s, df = df) +
     
     prior_cl_means_A(model_s = model_s) +
     prior_cl_means(model_s = model_s) + 

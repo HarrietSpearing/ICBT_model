@@ -8,7 +8,7 @@ logistic = function(x){
 
 #-------------splitting -----------------# 
 #------ Strengths ------#
-propose_split_A = function(model_s, n, data){
+propose_split_A = function(model_s, n, df){
   
   which_block = sample(1:(model_s$postCl_df_A+1),size = 1)
   u = model_s$sigma_s_m_A*rchisq(1,1)
@@ -27,7 +27,7 @@ propose_split_A = function(model_s, n, data){
   proposed_model$n_empty_A = proposed_model$n_empty_exc0_A + !(exc0 %in% proposed_model$postAllocation_A)
   
   model_s = split_A_accept_reject(model_s = model_s, proposed_model = proposed_model, u = u,
-                                data = data, k = which_block)
+                                df = df, k = which_block)
   
   return(model_s)
   
@@ -92,28 +92,28 @@ split_allocation_A = function(model_s, k){
   
   return(model_s$postAllocation_A)  
 }
-split_A_accept_reject = function(model_s, proposed_model, u, data, k){
+split_A_accept_reject = function(model_s, proposed_model, u, df, k){
   
   c_k = sum(model_s$postAllocation_A == k)
   cp_k = sum(proposed_model$postAllocation_A == k)
   
   if(model_s$postCl_df_A == 0){
-    A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-              lpd_pairwise_A(model_s = model_s, data = data) 
+    A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+              lpd_pairwise_A(model_s = model_s, df = df) 
             + log(2) +
               log(model_s$sigma_s_m_A) - dchisq(u/model_s$sigma_s_m_A,df = 1,log = T) -
               log(((1/2)^c_k)* (choose(c_k, cp_k))) )
   }else{
     if(k == 0){
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) -
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) -
                 log(1 + I(model_s$postCl_df_A == 0)) + 
                 log(2) + log(model_s$sigma_s_m_A) - dchisq(u/model_s$sigma_s_m_A,df = 1,log = T) -
                 log(((1/2)^c_k)* (choose(c_k, cp_k))) )*
         Jacobian_A_0(model_s = model_s, k = k, u = u)
     }else{
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) -
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) -
                 log(1 + I(model_s$postCl_df_A == 0)) + 
                 log(model_s$sigma_s_m_A) - dchisq(u/model_s$sigma_s_m_A,df = 1,log = T) -
                 log(((1/2)^c_k)* (choose(c_k, cp_k))) )*
@@ -128,7 +128,7 @@ split_A_accept_reject = function(model_s, proposed_model, u, data, k){
   return(model_s)
 }
 #----- Intransitivity ---#
-propose_split_ = function(model_s, n, data){
+propose_split_ = function(model_s, n, df){
 
   which_block = sample(0:model_s$postCl_df,size = 1)
   u = model_s$sigma_s_m*rchisq(1,1)
@@ -145,7 +145,7 @@ propose_split_ = function(model_s, n, data){
   proposed_model$n_empty = proposed_model$n_empty_exc0 + !(0 %in% proposed_model$postAllocation)
   
   model_s = split_accept_reject_(model_s = model_s, proposed_model = proposed_model, u = u,
-                                data = data, k = which_block)
+                                df = df, k = which_block)
   return(model_s)
   
 }
@@ -224,7 +224,7 @@ split_allocation = function(model_s, k){
   
   return(model_s$postAllocation)  
 }
-split_accept_reject_ = function(model_s, proposed_model, u, data, k){
+split_accept_reject_ = function(model_s, proposed_model, u, df, k){
   
   if( k == 0){
     
@@ -238,8 +238,8 @@ split_accept_reject_ = function(model_s, proposed_model, u, data, k){
     
     if(model_s$postCl_df == 0){
       
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) -
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) -
                 log(1 + I(model_s$postCl_df == 0)) + log(model_s$sigma_s_m) - dchisq(u/model_s$sigma_s_m, df = 1,log = T) -
                 
                 ( log((1/3)^b_k) + lgamma(b_k+1) - (lgamma(bp__1) + lgamma(bp_k) + lgamma(bp_1)) )
@@ -247,8 +247,8 @@ split_accept_reject_ = function(model_s, proposed_model, u, data, k){
       
     }else{
       
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) -
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) -
                 log(1 + I(model_s$postCl_df == 0)) + log(model_s$sigma_s_m) - dchisq(u/model_s$sigma_s_m, df = 1,log = T) -
                 ( log((1/3)^b_k) + lgamma(b_k+1) - (lgamma(bp__1) + lgamma(bp_k) + lgamma(bp_1)) ) )*
         Jacobian_0(model_s = model_s, k = k, u = u)
@@ -260,8 +260,8 @@ split_accept_reject_ = function(model_s, proposed_model, u, data, k){
     b__k = sum(model_s$postAllocation == -k)
     bp__k = sum(proposed_model$postAllocation == -k)    
     
-    A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-              lpd_pairwise_A(model_s = model_s, data = data) -
+    A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+              lpd_pairwise_A(model_s = model_s, df = df) -
               log(1 + I(model_s$postCl_df == 0)) + log(model_s$sigma_s_m) - dchisq(u/model_s$sigma_s_m, df = 1,log = T) -
               log(((1/2)^b_k)* (choose(b_k, bp_k))) - log(((1/2)^b__k)* (choose(b__k, bp__k))) )*
       Jacobian(model_s = model_s, k = k, u = u)
@@ -279,7 +279,7 @@ split_accept_reject_ = function(model_s, proposed_model, u, data, k){
 
 #----------merging ---------------------# 
 #----- Strengths --------#
-propose_merge_A = function(model_s, data){
+propose_merge_A = function(model_s, df){
   
   which_blocks = sample(1:(model_s$postCl_df_A), size = 1)
   proposed_model = model_s
@@ -302,7 +302,7 @@ propose_merge_A = function(model_s, data){
   proposed_model$n_empty_A = proposed_model$n_empty_exc0_A + !(exc0 %in% proposed_model$postAllocation_A)
   
   model_s = merge_A_accept_reject(model_s = model_s, proposed_model = proposed_model, u = u, 
-                                data = data, k = which_blocks)
+                                df = df, k = which_blocks)
   return(model_s)
 }
 merge_params_A = function(model_s, k){
@@ -344,30 +344,30 @@ merge_allocation_A = function(model_s, k){
   return(prop_alloc)
   
 }
-merge_A_accept_reject = function(model_s, proposed_model, u, data, k){
+merge_A_accept_reject = function(model_s, proposed_model, u, df, k){
   
   
   c_k = sum(model_s$postAllocation_A == k)
   cp_k = sum(proposed_model$postAllocation_A == k)
   
   if(model_s$postCl_df_A == 1){
-    A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-              lpd_pairwise_A(model_s = model_s, data = data) +
+    A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+              lpd_pairwise_A(model_s = model_s, df = df) +
               log(1 + I(model_s$postCl_df_A == 0)) +
               dchisq(u/model_s$sigma_s_m_A, df = 1, log = T) - log(model_s$sigma_s_m_A) - log(2) +
               log(((1/2)^cp_k)*(choose(cp_k, c_k))) )
     
   }else{
     if(any(model_s$postPhi[k:(k+1)] == 0)){
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) +
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) +
                 log(1 + I(model_s$postCl_df_A == 0)) +
                 dchisq(u/model_s$sigma_s_m_A, df = 1, log = T) - log(model_s$sigma_s_m_A) - log(2) +
                 log(((1/2)^cp_k)*(choose(cp_k, c_k))) )/
         Jacobian_A_0(model_s = proposed_model, k = k, u = u)
     }else{
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) +
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) +
                 log(1 + I(model_s$postCl_df_A == 0)) +
                 dchisq(u/model_s$sigma_s_m_A, df = 1, log = T) - log(model_s$sigma_s_m_A) +
                 log(((1/2)^cp_k)*(choose(cp_k, c_k))) )/
@@ -383,7 +383,7 @@ merge_A_accept_reject = function(model_s, proposed_model, u, data, k){
   return(model_s)
 }
 #----- Intransitivity ---#
-propose_merge_ = function(model_s, data){
+propose_merge_ = function(model_s, df){
   
   which_block = sample(0:(model_s$postCl_df-1),size = 1)
   proposed_model = model_s
@@ -400,7 +400,7 @@ propose_merge_ = function(model_s, data){
   proposed_model$n_empty = proposed_model$n_empty_exc0 + !(0 %in% proposed_model$postAllocation)
   
   model_s = merge_accept_reject_(model_s = model_s, proposed_model = proposed_model, u = u, 
-                                 data = data, k = which_block)
+                                 df = df, k = which_block)
   return(model_s)
 }
 merge_params = function(model_s, k){
@@ -470,7 +470,7 @@ merge_allocation = function(model_s, k){
   return(prop_alloc)
   
 }
-merge_accept_reject_ = function(model_s, proposed_model, u, data, k){
+merge_accept_reject_ = function(model_s, proposed_model, u, df, k){
 
   
   b_k = sum(proposed_model$postAllocation == k)
@@ -485,8 +485,8 @@ merge_accept_reject_ = function(model_s, proposed_model, u, data, k){
     if(b_k != bp_k + bp__1 + bp_1){
       stop("error in merge acceptreject step")
     }
-    A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-              lpd_pairwise_A(model_s = model_s, data = data) +
+    A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+              lpd_pairwise_A(model_s = model_s, df = df) +
               log(1 + I(model_s$postCl_df == 0)) + dchisq(u/model_s$sigma_s_m, df = 1, log = T) - log(model_s$sigma_s_m) +
               log((1/3)^b_k) + lgamma(b_k+1) - (lgamma(bp__1) + lgamma(bp_k) + lgamma(bp_1)) )
     
@@ -496,8 +496,8 @@ merge_accept_reject_ = function(model_s, proposed_model, u, data, k){
             
   }else{
     if(k == 0){
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) +
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) +
                 log(1 + I(model_s$postCl_df == 0)) + dchisq(u/model_s$sigma_s_m, df = 1, log = T) - log(model_s$sigma_s_m) +
                 log((1/3)^b_k) + lgamma(b_k+1) - (lgamma(bp__1) + lgamma(bp_k) + lgamma(bp_1))
       )/
@@ -510,8 +510,8 @@ merge_accept_reject_ = function(model_s, proposed_model, u, data, k){
       bp__k = sum(proposed_model$postAllocation == -k)    
       
       
-      A = exp(lpd_pairwise_A(model_s = proposed_model, data = data) - 
-                lpd_pairwise_A(model_s = model_s, data = data) +
+      A = exp(lpd_pairwise_A(model_s = proposed_model, df = df) - 
+                lpd_pairwise_A(model_s = model_s, df = df) +
                 log(1 + I(model_s$postCl_df == 0)) + dchisq(u/model_s$sigma_s_m, df = 1, log = T) - log(model_s$sigma_s_m) +
                 log(((1/2)^bp_k)* (choose(bp_k, b_k))) + log(((1/2)^bp__k)* (choose(bp__k, b__k))) 
               )/

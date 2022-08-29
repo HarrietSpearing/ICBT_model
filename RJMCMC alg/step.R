@@ -1,11 +1,11 @@
-step_A = function(model, data, s){
+step_A = function(model, df, s){
   
   model_s = model_instance_s_A(model = model, s = s)
 
   if(runif(1) < model$s_m_step){ ## with probability s_m_step, do a reversible jump move.
-    model_s = reversible_jump_step_A(model_s, data = data)
+    model_s = reversible_jump_step_A(model_s, df = df)
   }else{
-    model_s = metropolis_hastings_step_A(model_s = model_s, data = data, s=s)
+    model_s = metropolis_hastings_step_A(model_s = model_s, df = df, s=s)
   }
   model = update_model_A(model=model, model_s = model_s, s = s)
 
@@ -111,7 +111,7 @@ update_model_A = function(model, model_s, s){
   
 }
 
-reversible_jump_step_A = function(model_s, data){
+reversible_jump_step_A = function(model_s, df){
   
   intrans_or_strength = runif(1) < model_s$i_v_st ## larger value means more likely to RJ on intrans
   
@@ -124,18 +124,18 @@ reversible_jump_step_A = function(model_s, data){
       #------------------ splitting/merging--------------#
       if(model_s$postCl_df == 0){
         
-        model_s = propose_split_(model_s = model_s, data = data)# watch out for empty clusters being added
+        model_s = propose_split_(model_s = model_s, df = df)# watch out for empty clusters being added
 
       }else{
         i = sample(x = c(0,1), 1)
 
         if(i == 0){ 
           
-          model_s = propose_split_(model_s = model_s, data = data)# watch out for empty clusters being added
+          model_s = propose_split_(model_s = model_s, df = df)# watch out for empty clusters being added
 
         }else if(i == 1){
 
-          model_s =  propose_merge_(model_s = model_s, data = data)# watch out for empty clusters being deleted
+          model_s =  propose_merge_(model_s = model_s, df = df)# watch out for empty clusters being deleted
 
         }
       }
@@ -170,22 +170,22 @@ reversible_jump_step_A = function(model_s, data){
       
       if(model_s$postCl_df_A == 0){
 
-        model_s = propose_split_A(model_s = model_s, data = data)# watch out for empty clusters being added
+        model_s = propose_split_A(model_s = model_s, df = df)# watch out for empty clusters being added
 
       }else if(model_s$postCl_df_A == model_s$n-1){
 
-        model_s = propose_merge_A(model_s = model_s, data = data)# watch out for empty clusters being added
+        model_s = propose_merge_A(model_s = model_s, df = df)# watch out for empty clusters being added
         
       }else{
         i = sample(x = c(0,1), 1)
         
         if(i == 0){
 
-          model_s = propose_split_A(model_s = model_s, data = data)
+          model_s = propose_split_A(model_s = model_s, df = df)
 
         }else if(i == 1){
 
-          model_s =  propose_merge_A(model_s = model_s, data = data)# watch out for empty clusters being deleted
+          model_s =  propose_merge_A(model_s = model_s, df = df)# watch out for empty clusters being deleted
 
         }
       }
@@ -225,7 +225,7 @@ reversible_jump_step_A = function(model_s, data){
   }
   A_exc0 = c(1:(model_s$postCl_df_A+1))
 
-  model_s$postd = lpd_pairwise_A(model_s = model_s, data= data)
+  model_s$postd = lpd_pairwise_A(model_s = model_s, df= df)
   model_s$llh = model_s$postd - 
     (
       prior_cl_df(model_s = model_s) + prior_cl_means(model_s = model_s) + prior_DMA(model_s = model_s) + 
@@ -235,31 +235,31 @@ reversible_jump_step_A = function(model_s, data){
   return(model_s)
 }
 
-metropolis_hastings_step_A = function(model_s, data, s){
+metropolis_hastings_step_A = function(model_s, df, s){
   
   #----- update phi ------# 
   
-  model_s = Update_phis(model_s = model_s, data = data)
+  model_s = Update_phis(model_s = model_s, df = df)
   
   #----- update Allocation_A ------#
   if(model_s$fix_clusters_A == F){
     if(runif(1,0,1)< model_s$alloc_step_A){
-      model_s = Update_allocations_A(model_s = model_s, data = data)
+      model_s = Update_allocations_A(model_s = model_s, df = df)
     }
   }
   #----- update theta ------#  
-  model_s = Update_thetas_A(model_s = model_s, data = data)
+  model_s = Update_thetas_A(model_s = model_s, df = df)
   
   #----- update Allocation ------#
   if(model_s$fix_clusters == F){
     if(runif(1,0,1)< model_s$alloc_step){
 
-      model_s = Update_allocations_(model_s = model_s, data = data)
+      model_s = Update_allocations_(model_s = model_s, df = df)
       
     }
   }
   
-  model_s$postd = lpd_pairwise_A(model_s = model_s, data= data)
+  model_s$postd = lpd_pairwise_A(model_s = model_s, df= df)
   model_s$llh = model_s$postd - 
     (
       prior_cl_df(model_s = model_s) + prior_cl_means(model_s = model_s) + prior_DMA(model_s = model_s) + 
